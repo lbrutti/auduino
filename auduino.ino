@@ -10,10 +10,12 @@
 // Analog in 2: Grain 1 decay
 // Analog in 3: Grain 2 pitch
 // Analog in 4: Grain repetition frequency
+// Analog in 5: Randomness amount
 //
 // Digital 3: Audio out (Digital 11 on ATmega8)
 //
 // Changelog:
+// 20 Sep 2019: Added randomness amount
 // 19 Nov 2008: Added support for ATmega8 boards
 // 21 Mar 2009: Added support for ATmega328 boards
 // 7 Apr 2009: Fixed interrupt vector for ATmega328 boards
@@ -42,6 +44,9 @@ uint8_t grain2Decay;
 #define GRAIN2_DECAY_CONTROL (1)
 //Master
 #define SYNC_CONTROL         (4)
+
+//Randomness amt
+#define RANDOM_CONTROL (5)
 
 
 // Changing these will also requires rewriting audioOn()
@@ -122,6 +127,8 @@ uint16_t mapPentatonic(uint16_t input) {
   return (pentatonicTable[value]);
 }
 
+long random_amt = 0;
+
 
 void audioOn() {
 #if defined(__AVR_ATmega8__)
@@ -143,44 +150,47 @@ void audioOn() {
 
 void setup() {
   pinMode(PWM_PIN, OUTPUT);
-  Serial.begin(9600);
+    Serial.begin(9600);
   audioOn();
   pinMode(LED_PIN, OUTPUT);
 }
 
 void loop() {
+  random_amt = map(analogRead(RANDOM_CONTROL), 0, 1023, 100, 0);
   // The loop is pretty simple - it just updates the parameters for the oscillators.
   //
   // Avoid using any functions that make extensive use of interrupts, or turn interrupts off.
   // They will cause clicks and poops in the audio.
 
   // Smooth frequency mapping
-  syncPhaseInc = mapPhaseInc(analogRead(SYNC_CONTROL)) / (10 + random(10, 100));
-  delay(random(200, 500));
+  syncPhaseInc = mapPhaseInc(analogRead(SYNC_CONTROL)) / (10 + random(0, random_amt));
+  delay(random(0, random_amt));
 
   // Stepped mapping to MIDI notes: C, Db, D, Eb, E, F...
   //syncPhaseInc = mapMidi(analogRead(SYNC_CONTROL));
 
   // Stepped pentatonic mapping: D, E, G, A, B
   //  syncPhaseInc = mapPentatonic(analogRead(SYNC_CONTROL));
-Serial.print("syncPhaseInc = "); Serial.println(syncPhaseInc);
+//  Serial.print("analogRead(SYNC_CONTROL) = "); Serial.println(analogRead(SYNC_CONTROL));
+
+  Serial.print("syncPhaseInc = "); Serial.println(syncPhaseInc);
 
   grainPhaseInc  = mapPhaseInc(analogRead(GRAIN_FREQ_CONTROL)) / 2;
-//  delay(random(200, 500));
-Serial.print("grainPhaseInc = "); Serial.println(grainPhaseInc);
+    delay(random(0, random_amt));
+  Serial.print("grainPhaseInc = "); Serial.println(grainPhaseInc);
 
   grainDecay     = analogRead(GRAIN_DECAY_CONTROL) / 8;
-//  delay(random(200, 500));
-Serial.print("grainDecay = "); Serial.println(grainDecay);
+  //  delay(random(200, 500));
+  Serial.print("grainDecay = "); Serial.println(grainDecay);
 
   grain2PhaseInc = mapPhaseInc(analogRead(GRAIN2_FREQ_CONTROL)) / 2;
-//  delay(random(10, 80));
-Serial.print("grain2PhaseInc = "); Serial.println(grain2PhaseInc);
+  //  delay(random(10, 80));
+  Serial.print("grain2PhaseInc = "); Serial.println(grain2PhaseInc);
 
 
-  grain2Decay    = analogRead(GRAIN2_DECAY_CONTROL) / 4;
-//  delay(random(200, 500));
-Serial.print("grain2Decay = "); Serial.println(grain2Decay);
+  grain2Decay    = analogRead(GRAIN2_DECAY_CONTROL) / 3;
+  //  delay(random(200, 500));
+  Serial.print("grain2Decay = "); Serial.println(grain2Decay);
 
 }
 
