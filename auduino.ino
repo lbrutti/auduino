@@ -48,6 +48,8 @@ uint8_t grain2Decay;
 //Randomness amt
 #define RANDOM_CONTROL (5)
 
+//ON-OFF
+#define ON_OFF (8)
 
 // Changing these will also requires rewriting audioOn()
 
@@ -85,6 +87,15 @@ uint8_t grain2Decay;
 #define LED_BIT       5
 #define PWM_INTERRUPT TIMER2_OVF_vect
 #endif
+
+
+int buttonState;             // the current reading from the input pin
+int lastButtonState = LOW;   // the previous reading from the input pin
+// the following variables are unsigned longs because the time, measured in
+// milliseconds, will quickly become a bigger number than can be stored in an int.
+unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
+unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
+
 
 // Smooth logarithmic mapping
 //
@@ -149,48 +160,66 @@ void audioOn() {
 
 
 void setup() {
+  pinMode(ON_OFF, INPUT);
+
   pinMode(PWM_PIN, OUTPUT);
-    Serial.begin(9600);
   audioOn();
   pinMode(LED_PIN, OUTPUT);
 }
 
+void setState() {
+  // read the state of the switch into a local variable:
+  int reading = digitalRead(ON_OFF);
+
+  // check to see if you just pressed the button
+  // (i.e. the input went from LOW to HIGH), and you've waited long enough
+  // since the last press to ignore any noise:
+
+  // If the switch changed, due to noise or pressing:
+  if (reading != lastButtonState) {
+    // reset the debouncing timer
+    lastDebounceTime = millis();
+  }
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    // whatever the reading is at, it's been there for longer than the debounce
+    // delay, so take it as the actual current state:
+
+    // if the button state has changed:
+    if (reading != buttonState) {
+      buttonState = reading;
+    }
+  }
+  // save the reading. Next time through the loop, it'll be the lastButtonState:
+  lastButtonState = reading;
+}
 void loop() {
-  random_amt = map(analogRead(RANDOM_CONTROL), 0, 1023, 100, 0);
-  // The loop is pretty simple - it just updates the parameters for the oscillators.
-  //
-  // Avoid using any functions that make extensive use of interrupts, or turn interrupts off.
-  // They will cause clicks and poops in the audio.
+  setState();
+  if (lastButtonState == LOW) {
+    random_amt = map(analogRead(RANDOM_CONTROL), 0, 1023, 100, 0);
+    // The loop is pretty simple - it just updates the parameters for the oscillators.
+    //
+    // Avoid using any functions that make extensive use of interrupts, or turn interrupts off.
+    // They will cause clicks and poops in the audio.
 
-  // Smooth frequency mapping
-  syncPhaseInc = mapPhaseInc(analogRead(SYNC_CONTROL)) / (10 + random(0, random_amt));
-  delay(random(0, random_amt));
-
-  // Stepped mapping to MIDI notes: C, Db, D, Eb, E, F...
-  //syncPhaseInc = mapMidi(analogRead(SYNC_CONTROL));
-
-  // Stepped pentatonic mapping: D, E, G, A, B
-  //  syncPhaseInc = mapPentatonic(analogRead(SYNC_CONTROL));
-//  Serial.print("analogRead(SYNC_CONTROL) = "); Serial.println(analogRead(SYNC_CONTROL));
-
-  Serial.print("syncPhaseInc = "); Serial.println(syncPhaseInc);
-
-  grainPhaseInc  = mapPhaseInc(analogRead(GRAIN_FREQ_CONTROL)) / 2;
+    // Smooth frequency mapping
+    syncPhaseInc = mapPhaseInc(analogRead(SYNC_CONTROL)) / (10 + random(0, random_amt));
     delay(random(0, random_amt));
-  Serial.print("grainPhaseInc = "); Serial.println(grainPhaseInc);
 
-  grainDecay     = analogRead(GRAIN_DECAY_CONTROL) / 8;
-  //  delay(random(200, 500));
-  Serial.print("grainDecay = "); Serial.println(grainDecay);
+    grainPhaseInc  = mapPhaseInc(analogRead(GRAIN_FREQ_CONTROL)) / 2;
+    delay(random(0, random_amt));
 
-  grain2PhaseInc = mapPhaseInc(analogRead(GRAIN2_FREQ_CONTROL)) / 2;
-  //  delay(random(10, 80));
-  Serial.print("grain2PhaseInc = "); Serial.println(grain2PhaseInc);
+    grainDecay     = analogRead(GRAIN_DECAY_CONTROL) / 8;
+    //  delay(random(200, 500));
+
+    grain2PhaseInc = mapPhaseInc(analogRead(GRAIN2_FREQ_CONTROL)) / 2;
+    //  delay(random(10, 80));
 
 
-  grain2Decay    = analogRead(GRAIN2_DECAY_CONTROL) / 3;
-  //  delay(random(200, 500));
-  Serial.print("grain2Decay = "); Serial.println(grain2Decay);
+    grain2Decay    = analogRead(GRAIN2_DECAY_CONTROL) / 3;
+    //  delay(random(200, 500));
+  }
+
 
 }
 
