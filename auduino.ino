@@ -30,16 +30,16 @@ uint8_t grain2Decay;
 
 // Map Analogue channels
 //Grain 1
-#define GRAIN_FREQ_CONTROL   (4)
-#define GRAIN_DECAY_CONTROL  (5)
+#define GRAIN_FREQ_CONTROL   (0)
+#define GRAIN_DECAY_CONTROL  (1)
 //Grain 2
-#define GRAIN2_FREQ_CONTROL  (8)
-#define GRAIN2_DECAY_CONTROL (9)
+#define GRAIN2_FREQ_CONTROL  (2)
+#define GRAIN2_DECAY_CONTROL (3)
 //Master
-#define SYNC_CONTROL         (6)
+#define SYNC_CONTROL         (4)
 
 //Randomness amt
-#define RANDOM_CONTROL (7)
+#define RANDOM_CONTROL (5)
 
 //ON-OFF
 #define ON_OFF (8)
