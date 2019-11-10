@@ -42,7 +42,7 @@ uint8_t grain2Decay;
 #define RANDOM_CONTROL (5)
 
 //ON-OFF
-#define ON_OFF (8)
+#define FREEZE (2)
 
 // Changing these will also requires rewriting audioOn()
 
@@ -153,42 +153,17 @@ void audioOn() {
 
 
 void setup() {
-  pinMode(ON_OFF, INPUT);
+  pinMode(FREEZE, INPUT_PULLUP);
+//  digitalWrite(FREEZE, HIGH);
 
   pinMode(PWM_PIN, OUTPUT);
   audioOn();
   pinMode(LED_PIN, OUTPUT);
 }
 
-void setState() {
-  // read the state of the switch into a local variable:
-  int reading = digitalRead(ON_OFF);
-
-  // check to see if you just pressed the button
-  // (i.e. the input went from LOW to HIGH), and you've waited long enough
-  // since the last press to ignore any noise:
-
-  // If the switch changed, due to noise or pressing:
-  if (reading != lastButtonState) {
-    // reset the debouncing timer
-    lastDebounceTime = millis();
-  }
-
-  if ((millis() - lastDebounceTime) > debounceDelay) {
-    // whatever the reading is at, it's been there for longer than the debounce
-    // delay, so take it as the actual current state:
-
-    // if the button state has changed:
-    if (reading != buttonState) {
-      buttonState = reading;
-    }
-  }
-  // save the reading. Next time through the loop, it'll be the lastButtonState:
-  lastButtonState = reading;
-}
 void loop() {
-  setState();
-  if (lastButtonState == LOW) {
+
+  if (digitalRead(FREEZE) == HIGH) {
     random_amt = map(analogRead(RANDOM_CONTROL), 0, 1023, 100, 0);
     // The loop is pretty simple - it just updates the parameters for the oscillators.
     //
